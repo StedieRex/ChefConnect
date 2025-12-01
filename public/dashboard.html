@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Recetas - ChefConnect</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Estilos rápidos para que se vea decente */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .form-card {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+
+        .recipe-card {
+            border: 1px solid #eee;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 8px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .recipe-img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        input,
+        textarea,
+        button {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        button {
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+
+        button.delete-btn {
+            background-color: #dc3545;
+            width: auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>👨‍🍳 Mis Recetas</h1>
+            <button id="btn-logout" style="width: auto; background: #333;">Cerrar Sesión</button>
+        </header>
+
+        <div class="form-card">
+            <h3>Nueva Receta</h3>
+            <input type="text" id="titulo" placeholder="Nombre del platillo (ej. Tacos al Pastor)" required>
+            <textarea id="instrucciones" placeholder="Ingredientes y pasos..." rows="3" required></textarea>
+
+            <label>Foto del platillo:</label>
+            <input type="file" id="imagen-file" accept="image/*">
+
+            <label>
+                <input type="checkbox" id="es-publica" style="width: auto;">
+                Hacer pública (visible en el Muro Social)
+            </label>
+
+            <button id="btn-guardar">Guardar Receta</button>
+        </div>
+
+        <hr>
+
+        <div id="lista-recetas">
+            <p>Cargando tus recetas...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { cerrarSesion, observarEstado } from "./src/auth.js";
+        import { uploadImageToCloudinary } from "./src/cloudinary.js";
+        import { crearReceta, obtenerMisRecetas, eliminarReceta } from "./src/recipes.js";
+
+        let usuarioActual = null;
+
+        // 1. Proteger la ruta: Si no hay usuario, regresa al login
+        observarEstado(async (user) => {
+            if (user) {
+                usuarioActual = user;
+                console.log("Usuario detectado:", user.email);
+                cargarRecetas(); // Cargar datos al iniciar
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        // 2. Botón de Cerrar Sesión
+        document.getElementById('btn-logout').addEventListener('click', cerrarSesion);
+
+        // 3. Lógica para guardar receta
+        const btnGuardar = document.getElementById('btn-guardar');
+
+        btnGuardar.addEventListener('click', async () => {
+            const titulo = document.getElementById('titulo').value;
+            const instrucciones = document.getElementById('instrucciones').value;
+            const fileInput = document.getElementById('imagen-file');
+            const esPublica = document.getElementById('es-publica').checked;
+
+            if (!titulo || !instrucciones) return alert("Llena los campos obligatorios");
+
+            btnGuardar.textContent = "Subiendo imagen...";
+            btnGuardar.disabled = true;
+
+            try {
+                let imagenUrl = "https://via.placeholder.com/150"; // Imagen por defecto
+
+                // A) Subir imagen a Cloudinary si el usuario seleccionó una
+                if (fileInput.files.length > 0) {
+                    const urlSubida = await uploadImageToCloudinary(fileInput.files[0]);
+                    if (urlSubida) imagenUrl = urlSubida;
+                }
+
+                // B) Guardar datos en Firestore
+                await crearReceta({
+                    titulo: titulo,
+                    instrucciones: instrucciones,
+                    imagen_url: imagenUrl,
+                    es_publica: esPublica,
+                    user_id: usuarioActual.uid, // Importante: Vincular al usuario
+                    autor: usuarioActual.displayName || "Chef Anónimo"
+                });
+
+                alert("¡Receta guardada!");
+                // Limpiar formulario y recargar lista
+                document.getElementById('titulo').value = "";
+                document.getElementById('instrucciones').value = "";
+                fileInput.value = "";
+                cargarRecetas();
+
+            } catch (error) {
+                console.error(error);
+                alert("Error al guardar la receta.");
+            } finally {
+                btnGuardar.textContent = "Guardar Receta";
+                btnGuardar.disabled = false;
+            }
+        });
+
+        // 4. Función para renderizar la lista
+        async function cargarRecetas() {
+            const container = document.getElementById('lista-recetas');
+            container.innerHTML = "<p>Actualizando...</p>";
+
+            const recetas = await obtenerMisRecetas(usuarioActual.uid);
+
+            if (recetas.length === 0) {
+                container.innerHTML = "<p>No tienes recetas guardadas aún.</p>";
+                return;
+            }
+
+            container.innerHTML = ""; // Limpiar
+            recetas.forEach(receta => {
+                const div = document.createElement('div');
+                div.className = "recipe-card";
+                div.innerHTML = `
+                    <img src="${receta.imagen_url}" class="recipe-img" alt="Foto receta">
+                    <div style="flex-grow: 1;">
+                        <h3>${receta.titulo}</h3>
+                        <p>${receta.instrucciones}</p>
+                        <small>${receta.es_publica ? "🌎 Pública" : "🔒 Privada"}</small>
+                    </div>
+                    <button class="delete-btn" data-id="${receta.id}">Eliminar</button>
+                `;
+                container.appendChild(div);
+            });
+
+            // Agregar eventos a los botones de eliminar
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    if (confirm("¿Seguro que quieres borrar esta receta?")) {
+                        await eliminarReceta(e.target.dataset.id);
+                        cargarRecetas();
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>

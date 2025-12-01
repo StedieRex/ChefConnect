@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muro Social - ChefConnect</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Estilos específicos para el muro */
+        .nav-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .nav-bar a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        /* Estilo del Widget de API Externa */
+        .api-widget {
+            background: #e3f2fd;
+            border: 2px dashed #2196f3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .api-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+            text-align: left;
+        }
+
+        .api-content img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+        }
+
+        /* Estilo de Tarjetas del Muro */
+        .social-card {
+            background: white;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .social-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .social-body {
+            padding: 15px;
+        }
+
+        .author-tag {
+            background: #eee;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px;">
+
+        <nav class="nav-bar">
+            <a href="dashboard.html">⬅ Mis Recetas</a>
+            <span>Muro Social</span>
+            <button id="btn-logout-social" style="margin-left: auto; width: auto; padding: 5px 10px;">Salir</button>
+        </nav>
+
+        <h1>🌎 Qué está cocinando el mundo</h1>
+
+        <div class="api-widget">
+            <h3>¿Sin inspiración? 💡</h3>
+            <p>Sugerencia de <span style="font-weight: bold;">TheMealDB API</span>:</p>
+            <div id="api-loading">Buscando idea...</div>
+
+            <div id="api-result" class="api-content" style="display: none;">
+                <img id="api-img" src="" alt="Comida Random">
+                <div>
+                    <h4 id="api-title" style="margin: 0;">Titulo</h4>
+                    <small id="api-cat">Categoría</small>
+                </div>
+            </div>
+            <button id="btn-nueva-idea" style="margin-top: 10px; width: auto; background: #2196f3;">Otra idea</button>
+        </div>
+
+        <hr>
+
+        <div id="feed-social">
+            <p>Cargando recetas de la comunidad...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { cerrarSesion, observarEstado } from "./src/auth.js";
+        import { obtenerRecetasPublicas } from "./src/recipes.js";
+        import { obtenerIdeaAleatoria } from "./src/api-externa.js";
+
+        // 1. Seguridad básica
+        observarEstado((user) => {
+            if (!user) window.location.href = "index.html";
+        });
+
+        document.getElementById('btn-logout-social').addEventListener('click', cerrarSesion);
+
+        // 2. Cargar Widget de API Externa
+        const cargarWidget = async () => {
+            const loading = document.getElementById('api-loading');
+            const result = document.getElementById('api-result');
+
+            loading.style.display = 'block';
+            result.style.display = 'none';
+
+            const idea = await obtenerIdeaAleatoria();
+
+            if (idea) {
+                document.getElementById('api-title').textContent = idea.titulo;
+                document.getElementById('api-cat').textContent = `${idea.area} - ${idea.categoria}`;
+                document.getElementById('api-img').src = idea.imagen;
+
+                loading.style.display = 'none';
+                result.style.display = 'flex';
+            } else {
+                loading.textContent = "Error al cargar API";
+            }
+        };
+
+        // Evento para el botón "Otra idea"
+        document.getElementById('btn-nueva-idea').addEventListener('click', cargarWidget);
+        // Cargar al inicio
+        cargarWidget();
+
+        // 3. Cargar Feed Social (Firestore)
+        const cargarFeed = async () => {
+            const container = document.getElementById('feed-social');
+            const recetas = await obtenerRecetasPublicas();
+
+            if (recetas.length === 0) {
+                container.innerHTML = "<p>Nadie ha publicado recetas públicas aún.</p>";
+                return;
+            }
+
+            container.innerHTML = "";
+            recetas.forEach(receta => {
+                const card = document.createElement('div');
+                card.className = "social-card";
+
+                // Usamos la imagen de Cloudinary o un placeholder
+                const imgUrl = receta.imagen_url || "https://via.placeholder.com/400x200?text=Sin+Foto";
+
+                card.innerHTML = `
+                    <img src="${imgUrl}" class="social-img" alt="${receta.titulo}">
+                    <div class="social-body">
+                        <h3 style="margin-top:0;">${receta.titulo}</h3>
+                        <p style="color: #555; font-size: 0.9em;">${receta.instrucciones}</p>
+                        <div style="margin-top: 10px;">
+                            <span class="author-tag">👤 Por: ${receta.autor || "Anónimo"}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        };
+
+        cargarFeed();
+
+    </script>
+</body>
+
+</html>

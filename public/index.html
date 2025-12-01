@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChefConnect - Bienvenido</title>
+    <link rel="stylesheet" href="css/styles.css"> 
+</head>
+<body>
+    <div style="text-align: center; margin-top: 50px;">
+        <h1>👨‍🍳 ChefConnect</h1>
+        <p>Tu recetario social e inteligente.</p>
+        
+        <button id="btn-login" style="padding: 10px 20px; cursor: pointer;">
+            Ingresar con Google
+        </button>
+    </div>
+
+    <script type="module">
+        // Importamos la función de nuestro archivo auth.js
+        import { iniciarSesion } from "./src/auth.js";
+
+        const btn = document.getElementById('btn-login');
+
+        btn.addEventListener('click', async () => {
+            try {
+                const usuario = await iniciarSesion();
+                console.log("Bienvenido:", usuario.displayName);
+                // Si todo sale bien, redirigimos al dashboard
+                window.location.href = "dashboard.html";
+            } catch (error) {
+                alert("Hubo un error al entrar. Revisa la consola.");
+            }
+        });
+    </script>
+</body>
+</html>
