@@ -75,36 +75,37 @@
 </head>
 
 <body>
-    <div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px;">
-
-        <nav class="nav-bar">
-            <a href="dashboard.html">⬅ Mis Recetas</a>
-            <span>Muro Social</span>
-            <button id="btn-logout-social" style="margin-left: auto; width: auto; padding: 5px 10px;">Salir</button>
-        </nav>
-
-        <h1>🌎 Qué está cocinando el mundo</h1>
-
-        <div class="api-widget">
-            <h3>¿Sin inspiración? 💡</h3>
-            <p>Sugerencia de <span style="font-weight: bold;">TheMealDB API</span>:</p>
-            <div id="api-loading">Buscando idea...</div>
-
-            <div id="api-result" class="api-content" style="display: none;">
-                <img id="api-img" src="" alt="Comida Random">
-                <div>
-                    <h4 id="api-title" style="margin: 0;">Titulo</h4>
-                    <small id="api-cat">Categoría</small>
-                </div>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <h2>👨‍🍳 ChefConnect</h2>
+            <ul class="nav-links">
+                <li>
+                    <a href="social.html" class="active">🌎 Muro Social</a>
+                </li>
+                <li>
+                    <a href="dashboard.html">📖 Mis Recetas</a>
+                </li>
+                <li>
+                    <a href="#" onclick="alert('Configuración próximamente...')">⚙️ Configuración</a>
+                </li>
+            </ul>
+            <div class="logout-container">
+                <button id="btn-logout-social" class="btn-logout-sidebar">Cerrar Sesión</button>
             </div>
-            <button id="btn-nueva-idea" style="margin-top: 10px; width: auto; background: #2196f3;">Otra idea</button>
-        </div>
+        </aside>
 
-        <hr>
+        <main class="main-content">
+            <h1>Qué está cocinando el mundo</h1>
+            
+            <div class="api-widget">
+               <button id="btn-nueva-idea">Otra idea</button>
+            </div>
 
-        <div id="feed-social">
-            <p>Cargando recetas de la comunidad...</p>
-        </div>
+            <hr>
+            <div id="feed-social">
+                <p>Cargando recetas...</p>
+            </div>
+        </main>
     </div>
 
     <script type="module">

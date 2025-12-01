@@ -68,39 +68,49 @@
 </head>
 
 <body>
-    <div class="container">
-        <header>
-            <h1>👨‍🍳 Mis Recetas</h1>
-            <button id="btn-logout" style="width: auto; background: #333;">Cerrar Sesión</button>
-        </header>
+<div class="app-layout">
+        <aside class="sidebar">
+            <h2>👨‍🍳 ChefConnect</h2>
+            <ul class="nav-links">
+                <li>
+                    <a href="social.html">🌎 Muro Social</a>
+                </li>
+                <li>
+                    <a href="dashboard.html" class="active">📖 Mis Recetas</a>
+                </li>
+                <li>
+                    <a href="#" onclick="alert('Configuración próximamente...')">⚙️ Configuración</a>
+                </li>
+            </ul>
+            <div class="logout-container">
+                <button id="btn-logout" class="btn-logout-sidebar">Cerrar Sesión</button>
+            </div>
+        </aside>
 
-        <div class="form-card">
-            <h3>Nueva Receta</h3>
-            <input type="text" id="titulo" placeholder="Nombre del platillo (ej. Tacos al Pastor)" required>
-            <textarea id="instrucciones" placeholder="Ingredientes y pasos..." rows="3" required></textarea>
-
-            <label>Foto del platillo:</label>
-            <input type="file" id="imagen-file" accept="image/*">
-
-            <label>
-                <input type="checkbox" id="es-publica" style="width: auto;">
-                Hacer pública (visible en el Muro Social)
-            </label>
-
-            <button id="btn-guardar">Guardar Receta</button>
-        </div>
-
-        <hr>
-
-        <div id="lista-recetas">
-            <p>Cargando tus recetas...</p>
-        </div>
+        <main class="main-content">
+            <header>
+                <h1>Mis Recetas Personales</h1>
+            </header>
+            
+            <div class="form-card">
+                <h3>Nueva Receta</h3>
+                <input type="text" id="titulo" placeholder="Nombre del platillo..." required>
+                <textarea id="instrucciones" placeholder="Ingredientes y pasos..." rows="3" required></textarea>
+                <label>Foto: <input type="file" id="imagen-file" accept="image/*"></label>
+                <label><input type="checkbox" id="es-publica"> Hacer pública 🌎</label>
+                <button id="btn-guardar">Guardar Receta</button>
+            </div>
+            <hr>
+            <div id="lista-recetas">
+                <p>Cargando tus recetas...</p>
+            </div>
+        </main>
     </div>
 
     <script type="module">
-        import { cerrarSesion, observarEstado } from "./src/auth.js";
         import { uploadImageToCloudinary } from "./src/cloudinary.js";
         import { crearReceta, obtenerMisRecetas, eliminarReceta } from "./src/recipes.js";
+        import { cerrarSesion, observarEstado } from "./src/auth.js";
 
         let usuarioActual = null;
 

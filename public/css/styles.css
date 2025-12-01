@@ -1,0 +1,94 @@
+/* public/css/styles.css */
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    height: 100vh; /* Altura completa de la ventana */
+    overflow: hidden; /* Evita doble scroll */
+}
+
+/* CONTENEDOR PRINCIPAL (Layout) */
+.app-layout {
+    display: flex; /* Pone la barra al lado del contenido */
+    height: 100%;
+}
+
+/* BARRA LATERAL */
+.sidebar {
+    width: 240px;
+    background-color: #2c3e50;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+.sidebar h2 {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+    color: #ecf0f1;
+    text-align: center;
+}
+
+.nav-links {
+    list-style: none;
+    padding: 0;
+    flex-grow: 1; /* Empuja el contenido de abajo hacia el final */
+}
+
+.nav-links li {
+    margin-bottom: 15px;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #bdc3c7;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.nav-links a:hover, .nav-links a.active {
+    background-color: #34495e;
+    color: white;
+    transform: translateX(5px);
+}
+
+/* Botón de cerrar sesión al final de la barra */
+.logout-container {
+    border-top: 1px solid #34495e;
+    padding-top: 20px;
+}
+
+.btn-logout-sidebar {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* CONTENIDO PRINCIPAL (Derecha) */
+.main-content {
+    flex: 1; /* Ocupa el resto del espacio */
+    background-color: #f4f6f7;
+    padding: 30px;
+    overflow-y: auto; /* Scroll solo en el contenido */
+}
+
+/* Ajuste Responsive (Móvil) */
+@media (max-width: 768px) {
+    .app-layout { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; flex-direction: row; align-items: center; padding: 10px; box-sizing: border-box;}
+    .nav-links { display: flex; gap: 15px; margin: 0; }
+    .nav-links li { margin: 0; }
+    .sidebar h2, .logout-container { display: none; } /* Ocultar titulo y logout en movil para simplificar */
+}
