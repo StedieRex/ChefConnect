@@ -171,19 +171,30 @@
             }
 
             container.innerHTML = "";
+            // public/social.html - Dentro de cargarFeed()
+
             recetas.forEach(receta => {
                 const card = document.createElement('div');
                 card.className = "social-card";
 
-                // Usamos la imagen de Cloudinary o un placeholder
-                const imgUrl = receta.imagen_url || "https://via.placeholder.com/400x200?text=Sin+Foto";
+                const imgUrl = receta.imagen_url || "https://via.placeholder.com/400x200";
+
+                // Lógica para mostrar ingredientes/pasos o el formato viejo
+                const contenido = receta.instrucciones
+                    ? `<p>${receta.instrucciones}</p>`
+                    : `
+                    <p><strong>🥕 Ingredientes:</strong> <br> ${receta.ingredientes}</p>
+                    <p><strong>📝 Preparación:</strong> <br> ${receta.pasos}</p>
+                    `;
 
                 card.innerHTML = `
                     <img src="${imgUrl}" class="social-img" alt="${receta.titulo}">
                     <div class="social-body">
                         <h3 style="margin-top:0;">${receta.titulo}</h3>
-                        <p style="color: #555; font-size: 0.9em;">${receta.instrucciones}</p>
-                        <div style="margin-top: 10px;">
+                        <div style="color: #444; font-size: 0.95em;">
+                            ${contenido}
+                        </div>
+                        <div style="margin-top: 15px;">
                             <span class="author-tag">👤 Por: ${receta.autor || "Anónimo"}</span>
                         </div>
                     </div>

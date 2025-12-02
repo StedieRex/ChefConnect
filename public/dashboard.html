@@ -68,7 +68,7 @@
 </head>
 
 <body>
-<div class="app-layout">
+    <div class="app-layout">
         <aside class="sidebar">
             <h2>👨‍🍳 ChefConnect</h2>
             <ul class="nav-links">
@@ -91,13 +91,18 @@
             <header>
                 <h1>Mis Recetas Personales</h1>
             </header>
-            
+
             <div class="form-card">
                 <h3>Nueva Receta</h3>
                 <input type="text" id="titulo" placeholder="Nombre del platillo..." required>
-                <textarea id="instrucciones" placeholder="Ingredientes y pasos..." rows="3" required></textarea>
+
+                <textarea id="ingredientes" placeholder="🥕 Lista de ingredientes (ej. 1kg de harina, 2 huevos...)"
+                    rows="3" required></textarea>
+                <textarea id="pasos" placeholder="📝 Pasos de preparación..." rows="3" required></textarea>
+
                 <label>Foto: <input type="file" id="imagen-file" accept="image/*"></label>
                 <label><input type="checkbox" id="es-publica"> Hacer pública 🌎</label>
+
                 <button id="btn-guardar">Guardar Receta</button>
             </div>
             <hr>
@@ -131,46 +136,53 @@
         // 3. Lógica para guardar receta
         const btnGuardar = document.getElementById('btn-guardar');
 
+        // public/dashboard.html (Script)
+
         btnGuardar.addEventListener('click', async () => {
             const titulo = document.getElementById('titulo').value;
-            const instrucciones = document.getElementById('instrucciones').value;
+            // CAPTURAMOS LOS DOS NUEVOS CAMPOS
+            const ingredientes = document.getElementById('ingredientes').value;
+            const pasos = document.getElementById('pasos').value;
             const fileInput = document.getElementById('imagen-file');
             const esPublica = document.getElementById('es-publica').checked;
 
-            if (!titulo || !instrucciones) return alert("Llena los campos obligatorios");
+            // Validamos ambos
+            if (!titulo || !ingredientes || !pasos) return alert("Llena todos los campos");
 
-            btnGuardar.textContent = "Subiendo imagen...";
+            btnGuardar.textContent = "Subiendo...";
             btnGuardar.disabled = true;
 
             try {
-                let imagenUrl = "https://via.placeholder.com/150"; // Imagen por defecto
+                let imagenUrl = "https://via.placeholder.com/150";
 
-                // A) Subir imagen a Cloudinary si el usuario seleccionó una
                 if (fileInput.files.length > 0) {
                     const urlSubida = await uploadImageToCloudinary(fileInput.files[0]);
                     if (urlSubida) imagenUrl = urlSubida;
                 }
 
-                // B) Guardar datos en Firestore
+                // GUARDAMOS CON LA NUEVA ESTRUCTURA
                 await crearReceta({
                     titulo: titulo,
-                    instrucciones: instrucciones,
+                    ingredientes: ingredientes, // Nuevo campo
+                    pasos: pasos,               // Nuevo campo
                     imagen_url: imagenUrl,
                     es_publica: esPublica,
-                    user_id: usuarioActual.uid, // Importante: Vincular al usuario
+                    user_id: usuarioActual.uid,
                     autor: usuarioActual.displayName || "Chef Anónimo"
                 });
 
                 alert("¡Receta guardada!");
-                // Limpiar formulario y recargar lista
+
+                // Limpiamos los inputs
                 document.getElementById('titulo').value = "";
-                document.getElementById('instrucciones').value = "";
+                document.getElementById('ingredientes').value = ""; // Limpiar
+                document.getElementById('pasos').value = "";        // Limpiar
                 fileInput.value = "";
                 cargarRecetas();
 
             } catch (error) {
                 console.error(error);
-                alert("Error al guardar la receta.");
+                alert("Error al guardar.");
             } finally {
                 btnGuardar.textContent = "Guardar Receta";
                 btnGuardar.disabled = false;
@@ -190,14 +202,32 @@
             }
 
             container.innerHTML = ""; // Limpiar
+            // public/dashboard.html - Dentro de cargarRecetas()
+
             recetas.forEach(receta => {
                 const div = document.createElement('div');
                 div.className = "recipe-card";
+
+                // BACKWARD COMPATIBILITY:
+                // Si la receta es vieja, usa 'instrucciones'. Si es nueva, usa 'ingredientes' y 'pasos'.
+                const contenido = receta.instrucciones
+                    ? `<p>${receta.instrucciones}</p>` // Para recetas viejas
+                    : `
+                    <div style="margin-bottom: 8px;">
+                        <strong>🥕 Ingredientes:</strong>
+                        <p style="margin: 5px 0; font-size: 0.9em; white-space: pre-line;">${receta.ingredientes}</p>
+                    </div>
+                    <div>
+                        <strong>📝 Preparación:</strong>
+                        <p style="margin: 5px 0; font-size: 0.9em; white-space: pre-line;">${receta.pasos}</p>
+                    </div>
+                    `;
+
                 div.innerHTML = `
-                    <img src="${receta.imagen_url}" class="recipe-img" alt="Foto receta">
+                    <img src="${receta.imagen_url}" class="recipe-img" alt="Foto">
                     <div style="flex-grow: 1;">
-                        <h3>${receta.titulo}</h3>
-                        <p>${receta.instrucciones}</p>
+                        <h3 style="margin-top: 0;">${receta.titulo}</h3>
+                        ${contenido}
                         <small>${receta.es_publica ? "🌎 Pública" : "🔒 Privada"}</small>
                     </div>
                     <button class="delete-btn" data-id="${receta.id}">Eliminar</button>
