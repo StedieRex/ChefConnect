@@ -96,9 +96,22 @@
 
         <main class="main-content">
             <h1>Qué está cocinando el mundo</h1>
-            
+
             <div class="api-widget">
-               <button id="btn-nueva-idea">Otra idea</button>
+                <h3>¿Sin inspiración? 💡</h3>
+                <p>Sugerencia de <span style="font-weight: bold;">TheMealDB API</span>:</p>
+
+                <div id="api-loading">Buscando idea...</div>
+
+                <div id="api-result" class="api-content" style="display: none;">
+                    <img id="api-img" src="" alt="Comida Random">
+                    <div>
+                        <h4 id="api-title" style="margin: 0;">Titulo</h4>
+                        <small id="api-cat">Categoría</small>
+                    </div>
+                </div>
+
+                <button id="btn-nueva-idea" style="margin-top: 10px;">Otra idea</button>
             </div>
 
             <hr>
