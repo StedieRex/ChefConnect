@@ -105,3 +105,17 @@ body {
 .btn-follow.following {
     background-color: #95a5a6; /* Gris cuando ya lo sigues */
 }
+
+/* public/css/styles.css */
+.btn-unfollow-mini {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8em;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+.btn-unfollow-mini:hover {
+    opacity: 1;
+    transform: scale(1.2);
+}

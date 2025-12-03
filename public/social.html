@@ -186,8 +186,8 @@
                 let botonHTML = "";
                 if (!esMiReceta) {
                     botonHTML = yaLoSigo
-                        ? `<button class="btn-follow following" data-author="${receta.user_id}">Dejar de seguir</button>`
-                        : `<button class="btn-follow" data-author="${receta.user_id}">Seguir</button>`;
+                        ? `<button class="btn-follow following" data-author="${receta.user_id}" data-name="${receta.autor}">Dejar de seguir</button>`
+                        : `<button class="btn-follow" data-author="${receta.user_id}" data-name="${receta.autor}">Seguir</button>`;
                 }
 
                 const imgUrl = receta.imagen_url || "https://via.placeholder.com/400x200";
@@ -220,6 +220,7 @@
             document.querySelectorAll('.btn-follow').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const idAutor = e.target.dataset.author;
+                    const nombreAutor = e.target.dataset.name; // <--- NUEVO
                     const esFollowing = e.target.classList.contains('following');
 
                     if (esFollowing) {
@@ -227,7 +228,8 @@
                         e.target.textContent = "Seguir";
                         e.target.classList.remove('following');
                     } else {
-                        await seguirUsuario(usuarioActual.uid, idAutor);
+                        // Ahora pasamos el nombreAutor también
+                        await seguirUsuario(usuarioActual.uid, idAutor, nombreAutor);
                         e.target.textContent = "Siguiendo ✅";
                         e.target.classList.add('following');
                     }

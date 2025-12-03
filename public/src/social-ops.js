@@ -2,14 +2,14 @@
 import { db } from "./firebase-config.js";
 import { doc, setDoc, deleteDoc, getDoc, getDocs, collection, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// SEGUIR a un usuario
-export async function seguirUsuario(miId, idDelChef) {
-    if (miId === idDelChef) return; // No te puedes seguir a ti mismo
-    // Creamos un ID único combinando ambos (ej. "usuarioA_usuarioB")
+// SEGUIR (Ahora recibe nombreChef)
+export async function seguirUsuario(miId, idDelChef, nombreChef) {
+    if (miId === idDelChef) return;
     const idRelacion = `${miId}_${idDelChef}`;
     await setDoc(doc(db, "follows", idRelacion), {
         followerId: miId,
-        followedId: idDelChef
+        followedId: idDelChef,
+        chefName: nombreChef || "Chef Anónimo" // Guardamos el nombre para la lista lateral
     });
 }
 
@@ -19,14 +19,14 @@ export async function dejarDeSeguir(miId, idDelChef) {
     await deleteDoc(doc(db, "follows", idRelacion));
 }
 
-// VERIFICAR si ya lo sigo (para pintar el botón correcto)
+// VERIFICAR SI SIGO A ALGUIEN
 export async function estoySiguiendoA(miId, idDelChef) {
     const idRelacion = `${miId}_${idDelChef}`;
     const docRef = await getDoc(doc(db, "follows", idRelacion));
     return docRef.exists();
 }
 
-// OBTENER LISTA de gente que sigo (para el filtro de Chefs Favoritos)
+// OBTENER LISTA DE IDS (Para filtrar el feed)
 export async function obtenerAQuienSigo(miId) {
     const lista = [];
     const q = query(collection(db, "follows"), where("followerId", "==", miId));
@@ -34,5 +34,17 @@ export async function obtenerAQuienSigo(miId) {
     snapshot.forEach(doc => {
         lista.push(doc.data().followedId);
     });
-    return lista; // Devuelve array de IDs ej: ["user1", "user5"]
+    return lista;
+}
+
+// NUEVA: OBTENER LISTA DETALLADA (Para el Sidebar)
+export async function obtenerSeguidosDetalle(miId) {
+    const lista = [];
+    const q = query(collection(db, "follows"), where("followerId", "==", miId));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        lista.push({ id: data.followedId, nombre: data.chefName });
+    });
+    return lista;
 }

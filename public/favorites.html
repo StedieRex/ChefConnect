@@ -1,20 +1,30 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chefs Favoritos - ChefConnect</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
     <div class="app-layout">
         <aside class="sidebar">
             <h2>👨‍🍳 ChefConnect</h2>
             <ul class="nav-links">
                 <li><a href="social.html">🌎 Muro Global</a></li>
-                <li><a href="favorites.html" class="active">👨‍🍳 Chefs Favoritos</a></li> 
+                <li><a href="favorites.html" class="active">👨‍🍳 Chefs Favoritos</a></li>
                 <li><a href="dashboard.html">📖 Mis Recetas</a></li>
             </ul>
+
+            <div
+                style="flex-grow: 1; overflow-y: auto; margin-top: 20px; border-top: 1px solid #34495e; padding-top: 10px;">
+                <h4 style="font-size: 0.9em; color: #7f8c8d; margin-bottom: 10px; padding-left: 10px;">SIGUIENDO:</h4>
+                <ul id="lista-sidebar-seguidos" class="nav-links" style="font-size: 0.9em;">
+                </ul>
+            </div>
+
             <div class="logout-container">
                 <button id="btn-logout-fav" class="btn-logout-sidebar">Cerrar Sesión</button>
             </div>
@@ -33,7 +43,8 @@
     <script type="module">
         import { cerrarSesion, observarEstado } from "./src/auth.js";
         import { obtenerRecetasPublicas } from "./src/recipes.js";
-        import { obtenerAQuienSigo } from "./src/social-ops.js";
+
+        import { obtenerAQuienSigo, obtenerSeguidosDetalle, dejarDeSeguir } from "./src/social-ops.js";
 
         let usuarioActual = null;
 
@@ -41,13 +52,14 @@
             if (!user) window.location.href = "index.html";
             usuarioActual = user;
             cargarFeedFavoritos();
+            cargarSidebar();
         });
 
         document.getElementById('btn-logout-fav').addEventListener('click', cerrarSesion);
 
         async function cargarFeedFavoritos() {
             const container = document.getElementById('feed-favoritos');
-            
+
             // 1. Obtener lista de IDs que sigo
             const seguidos = await obtenerAQuienSigo(usuarioActual.uid);
 
@@ -79,13 +91,13 @@
             recetasFiltradas.forEach(receta => {
                 const card = document.createElement('div');
                 card.className = "social-card";
-                
+
                 const imgUrl = receta.imagen_url || "https://via.placeholder.com/400x200";
-                
+
                 // Formato nuevo de ingredientes/pasos
-                const contenido = receta.instrucciones 
-                ? `<p>${receta.instrucciones}</p>`
-                : `<p><strong>🥕 Ingredientes:</strong><br>${receta.ingredientes}</p>
+                const contenido = receta.instrucciones
+                    ? `<p>${receta.instrucciones}</p>`
+                    : `<p><strong>🥕 Ingredientes:</strong><br>${receta.ingredientes}</p>
                    <p><strong>📝 Pasos:</strong><br>${receta.pasos}</p>`;
 
                 card.innerHTML = `
@@ -102,6 +114,52 @@
                 container.appendChild(card);
             });
         }
+
+        // --- NUEVA FUNCIÓN PARA LA LISTA LATERAL ---
+        async function cargarSidebar() {
+            const listaContainer = document.getElementById('lista-sidebar-seguidos');
+            const seguidos = await obtenerSeguidosDetalle(usuarioActual.uid);
+
+            listaContainer.innerHTML = "";
+
+            if (seguidos.length === 0) {
+                listaContainer.innerHTML = "<li style='padding:10px; color:#95a5a6;'>No sigues a nadie.</li>";
+                return;
+            }
+
+            seguidos.forEach(item => {
+                const li = document.createElement('li');
+                // Estilos para que se vea alineado
+                li.style.display = "flex";
+                li.style.justifyContent = "space-between";
+                li.style.padding = "5px 10px";
+
+                li.innerHTML = `
+            <span style="color: #bdc3c7;">👤 ${item.nombre}</span>
+            <button class="btn-unfollow-mini" data-id="${item.id}" data-name="${item.nombre}" title="Dejar de seguir">❌</button>
+        `;
+                listaContainer.appendChild(li);
+            });
+
+            // Agregar eventos a los botones de eliminar (X)
+            document.querySelectorAll('.btn-unfollow-mini').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const idChef = e.target.dataset.id;
+                    const nombreChef = e.target.dataset.name;
+
+                    // ALERTA DE CONFIRMACIÓN
+                    const confirmar = confirm(`¿Estás seguro que quieres dejar de seguir a ${nombreChef}?`);
+
+                    if (confirmar) {
+                        await dejarDeSeguir(usuarioActual.uid, idChef);
+                        // Recargamos todo para actualizar la vista
+                        cargarSidebar();
+                        cargarFeedFavoritos();
+                    }
+                });
+            });
+        }
     </script>
 </body>
+
 </html>
