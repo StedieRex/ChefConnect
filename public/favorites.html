@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chefs Favoritos - ChefConnect</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <h2>👨‍🍳 ChefConnect</h2>
+            <ul class="nav-links">
+                <li><a href="social.html">🌎 Muro Global</a></li>
+                <li><a href="favorites.html" class="active">👨‍🍳 Chefs Favoritos</a></li> 
+                <li><a href="dashboard.html">📖 Mis Recetas</a></li>
+            </ul>
+            <div class="logout-container">
+                <button id="btn-logout-fav" class="btn-logout-sidebar">Cerrar Sesión</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <h1>🌟 Feed de tus Chefs Favoritos</h1>
+            <p>Aquí solo verás los platillos de las personas que sigues.</p>
+            <hr>
+            <div id="feed-favoritos">
+                <p>Cargando recetas de tus amigos...</p>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { cerrarSesion, observarEstado } from "./src/auth.js";
+        import { obtenerRecetasPublicas } from "./src/recipes.js";
+        import { obtenerAQuienSigo } from "./src/social-ops.js";
+
+        let usuarioActual = null;
+
+        observarEstado((user) => {
+            if (!user) window.location.href = "index.html";
+            usuarioActual = user;
+            cargarFeedFavoritos();
+        });
+
+        document.getElementById('btn-logout-fav').addEventListener('click', cerrarSesion);
+
+        async function cargarFeedFavoritos() {
+            const container = document.getElementById('feed-favoritos');
+            
+            // 1. Obtener lista de IDs que sigo
+            const seguidos = await obtenerAQuienSigo(usuarioActual.uid);
+
+            if (seguidos.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding: 20px;">
+                        <h3>¡No sigues a nadie aún! 😔</h3>
+                        <p>Ve al <a href="social.html">Muro Global</a> y dale "Seguir" a los chefs que te gusten.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // 2. Traer TODAS las recetas públicas
+            // (Nota: En una app gigante haríamos el filtro en Firebase, 
+            // pero para este proyecto filtramos en JS que es más fácil y no requiere índices complejos)
+            const todasLasRecetas = await obtenerRecetasPublicas();
+
+            // 3. Filtrar solo las que coincidan con mis seguidos
+            const recetasFiltradas = todasLasRecetas.filter(receta => seguidos.includes(receta.user_id));
+
+            if (recetasFiltradas.length === 0) {
+                container.innerHTML = "<p>Las personas que sigues aún no han publicado recetas públicas.</p>";
+                return;
+            }
+
+            // 4. Renderizar (Igual que en social)
+            container.innerHTML = "";
+            recetasFiltradas.forEach(receta => {
+                const card = document.createElement('div');
+                card.className = "social-card";
+                
+                const imgUrl = receta.imagen_url || "https://via.placeholder.com/400x200";
+                
+                // Formato nuevo de ingredientes/pasos
+                const contenido = receta.instrucciones 
+                ? `<p>${receta.instrucciones}</p>`
+                : `<p><strong>🥕 Ingredientes:</strong><br>${receta.ingredientes}</p>
+                   <p><strong>📝 Pasos:</strong><br>${receta.pasos}</p>`;
+
+                card.innerHTML = `
+                    <img src="${imgUrl}" class="social-img" alt="${receta.titulo}">
+                    <div class="social-body">
+                        <h3>${receta.titulo}</h3>
+                        <div style="color: #444; font-size: 0.9em;">${contenido}</div>
+                        <div style="margin-top: 10px;">
+                            <span class="author-tag">👤 Chef: ${receta.autor}</span> 
+                            <span style="color: green; font-size: 0.8em; margin-left:5px;">(Siguiendo)</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>

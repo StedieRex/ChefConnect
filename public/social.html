@@ -80,13 +80,13 @@
             <h2>👨‍🍳 ChefConnect</h2>
             <ul class="nav-links">
                 <li>
-                    <a href="social.html" class="active">🌎 Muro Social</a>
+                    <a href="social.html" id="link-social">🌎 Muro Global</a>
                 </li>
                 <li>
-                    <a href="dashboard.html">📖 Mis Recetas</a>
+                    <a href="favorites.html" id="link-favorites">👨‍🍳 Chefs Favoritos</a>
                 </li>
                 <li>
-                    <a href="#" onclick="alert('Configuración próximamente...')">⚙️ Configuración</a>
+                    <a href="dashboard.html" id="link-dashboard">📖 Mis Recetas</a>
                 </li>
             </ul>
             <div class="logout-container">
@@ -126,9 +126,14 @@
         import { obtenerRecetasPublicas } from "./src/recipes.js";
         import { obtenerIdeaAleatoria } from "./src/api-externa.js";
 
+        import { seguirUsuario, dejarDeSeguir, estoySiguiendoA } from "./src/social-ops.js";
+
+        let usuarioActual = null;
         // 1. Seguridad básica
         observarEstado((user) => {
             if (!user) window.location.href = "index.html";
+            usuarioActual = user;
+            cargarfeed();
         });
 
         document.getElementById('btn-logout-social').addEventListener('click', cerrarSesion);
@@ -163,43 +168,70 @@
         // 3. Cargar Feed Social (Firestore)
         const cargarFeed = async () => {
             const container = document.getElementById('feed-social');
+            container.innerHTML = "<p>Cargando recetas...</p>";
             const recetas = await obtenerRecetasPublicas();
 
-            if (recetas.length === 0) {
-                container.innerHTML = "<p>Nadie ha publicado recetas públicas aún.</p>";
-                return;
-            }
-
             container.innerHTML = "";
-            // public/social.html - Dentro de cargarFeed()
 
-            recetas.forEach(receta => {
+            // Usamos un bucle for...of para poder usar await dentro
+            for (const receta of recetas) {
                 const card = document.createElement('div');
                 card.className = "social-card";
 
+                // Verificamos si ya sigo a este chef
+                const yaLoSigo = await estoySiguiendoA(usuarioActual.uid, receta.user_id);
+                const esMiReceta = (usuarioActual.uid === receta.user_id);
+
+                // Definimos el botón (Seguir o Dejar de seguir)
+                let botonHTML = "";
+                if (!esMiReceta) {
+                    botonHTML = yaLoSigo
+                        ? `<button class="btn-follow following" data-author="${receta.user_id}">Dejar de seguir</button>`
+                        : `<button class="btn-follow" data-author="${receta.user_id}">Seguir</button>`;
+                }
+
                 const imgUrl = receta.imagen_url || "https://via.placeholder.com/400x200";
 
-                // Lógica para mostrar ingredientes/pasos o el formato viejo
+                // ... (Aquí va tu lógica de ingredientes vs instrucciones que hicimos antes) ...
                 const contenido = receta.instrucciones
                     ? `<p>${receta.instrucciones}</p>`
-                    : `
-                    <p><strong>🥕 Ingredientes:</strong> <br> ${receta.ingredientes}</p>
-                    <p><strong>📝 Preparación:</strong> <br> ${receta.pasos}</p>
-                    `;
+                    : `<p><strong>🥕 Ingredientes:</strong><br>${receta.ingredientes}</p>
+                    <p><strong>📝 Pasos:</strong><br>${receta.pasos}</p>`;
 
                 card.innerHTML = `
                     <img src="${imgUrl}" class="social-img" alt="${receta.titulo}">
                     <div class="social-body">
-                        <h3 style="margin-top:0;">${receta.titulo}</h3>
-                        <div style="color: #444; font-size: 0.95em;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h3 style="margin:0;">${receta.titulo}</h3>
+                            ${botonHTML}
+                        </div>
+                        <div style="color: #444; font-size: 0.95em; margin-top: 10px;">
                             ${contenido}
                         </div>
                         <div style="margin-top: 15px;">
-                            <span class="author-tag">👤 Por: ${receta.autor || "Anónimo"}</span>
+                            <span class="author-tag">👤 Chef: ${receta.autor || "Anónimo"}</span>
                         </div>
                     </div>
                 `;
                 container.appendChild(card);
+            }
+
+            // ACTIVAR LOS BOTONES DE SEGUIR
+            document.querySelectorAll('.btn-follow').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const idAutor = e.target.dataset.author;
+                    const esFollowing = e.target.classList.contains('following');
+
+                    if (esFollowing) {
+                        await dejarDeSeguir(usuarioActual.uid, idAutor);
+                        e.target.textContent = "Seguir";
+                        e.target.classList.remove('following');
+                    } else {
+                        await seguirUsuario(usuarioActual.uid, idAutor);
+                        e.target.textContent = "Siguiendo ✅";
+                        e.target.classList.add('following');
+                    }
+                });
             });
         };
 

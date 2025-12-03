@@ -92,3 +92,16 @@ body {
     .nav-links li { margin: 0; }
     .sidebar h2, .logout-container { display: none; } /* Ocultar titulo y logout en movil para simplificar */
 }
+
+.btn-follow {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+}
+.btn-follow.following {
+    background-color: #95a5a6; /* Gris cuando ya lo sigues */
+}
